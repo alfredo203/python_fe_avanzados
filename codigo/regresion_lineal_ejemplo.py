@@ -46,16 +46,15 @@ y_fit = model.predict(x)
 
 
 ## Graficando mi mejor variable predictiva
-a = df['Sales']
-b = df['Radio']
+import numpy as np
+y = df['Sales']
+x = df['Radio']
 
-plt.scatter(a, b)
+# fitting a linear regression line
+m, b = np.polyfit(x, y, 1) 
 
-# Agregar etiquetas
-plt.xlabel('Gasto en Radio (miles de USD)')
-plt.ylabel('Numero de ventas')
-plt.title('Grafica de dispersion de Ventas vs Gasto en Radio')
+plt.scatter(x,y)
+# adding the regression line to the scatter plot
+plt.plot(x, m*x + b)
 
-plt.plot(b, y_fit, color='red')
-plt.show()
 

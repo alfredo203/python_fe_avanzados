@@ -29,8 +29,20 @@ final = "2024-09-12"
 #Crear el data frame y elegir variables
 df = yf.download(tickers, start=inicio, end=final) #Esta es la base completa
 datos_req = ["Close"] #Aqui pueden poner los datos que quieran usar
-df_aj = df[datos_req] #Crea un df con los datos que quieren, este va a ser
+df_aj = df[datos_req] #Crea un df con los datos que quieren
+
+
+# Revisar si hay valores NaN 
+print (f"cuantos nan hay en cada columna{df_aj.isna().sum()}")# Ver cuántos 
+# valores NaN hay en cada columna
+
+
+# Eliminar o rellenar los valores faltantes (NaN) 
+df_act = df_aj.dropna()  # Eliminar filas con NaN este va a ser
 # el que se convertirá en csv
+print(f"Cuantos nan hay en cada columna de df_fin {df_act.isna().sum()}")
+#cuantos nan hay en df_act
+
 
 # Generar gráfica de todos los tickers
 for ticker in tickers: #Va a usar todos los tickers dentro de la lista tickers

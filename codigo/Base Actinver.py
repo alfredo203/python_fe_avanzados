@@ -11,9 +11,9 @@ Obtener datos de Yahoo finance
 #!pip install yfinance
 
 # Importar librerias
-import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
+import pygsheets 
 
 # Descargar información histórica
 tickers = ["GOOG","BKNG","META", "AAPL","TSLA","^IRX"] #Son los simbolos con
@@ -23,8 +23,8 @@ tickers_sin_bkng.remove("BKNG") #Solo es para ver la Grafica mejor
 
 #Elegir fechas
 # Pueden poner las fechas que gusten en el formato AAAA-MM-DD
-inicio = "2017-01-01"
-final = "2024-09-12"
+inicio = "2018-01-01"
+final = "2024-09-17"
 
 #Crear el data frame y elegir variables
 df = yf.download(tickers, start=inicio, end=final) #Esta es la base completa
@@ -76,16 +76,18 @@ for ticker in tickers: #Va a usar todos los tickers dentro de la lista tickers
     plt.grid(True) # hace una cuadricula
     plt.show() #muestra el gráfico
 
+#Pasar el dataframe a google sheets
+# Autenticar usando el archivo de credenciales descargado de Google Cloud
+gc = pygsheets.authorize(service_file="C:/Users/edson/OneDrive/Documents/EqupoPython/credenciales.json")
 
-# Convertir el df a un archivo de Excel
-# Usa pwd para ver en que carpeta se guardará el archivo
+#Abrir el google spreadsheet (dónde "BaseActinver es el nombre de mi hoja)
+sh = gc.open("BaseActinver")
 
-#df_aj.to_csv("Export/Base Actinver.csv") 
-#Export es el nombre de la subcarpeta donde queremos guardar el archivo
-#Base Actinver el nombre del archivo
+#Seleccionar la primera hoja
+wks = sh[0]
 
-#Falta saber como subirlo a Google sheets :(
-
+#Actualizar la primera hoja con el df_act
+wks.set_dataframe(df_act,(1,1),copy_index=True)
 
 
 

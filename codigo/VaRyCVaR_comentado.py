@@ -27,6 +27,8 @@ def getdata(stocks, start, end):
 
 #desempeno calcula el rendimiento de nuestro portafolio y la desviacion 
 #estandar del mismo 
+# peso = es un vector con los pesos por emisora/ticker [abajo se usan valores]
+# arbitrarios
 def desempeno(peso, media_rendimiento, covmatrix, time):
     rendimiento = np.sum(media_rendimiento*peso)*time 
     std = np.sqrt(np.dot(peso.T, np.dot(covmatrix, peso))) * np.sqrt(time)
@@ -84,11 +86,11 @@ hVaR = -historicalVar(rendimiento['portafolio'], alpha=5)*np.sqrt(time)
 hCVaR = -historicalCVar(rendimiento['portafolio'], alpha=5)*np.sqrt(time)
 
 #Adicionalmente calculamos el rendimiento de nuestro portafolio y su
-#desviacion estandar con la funcion desempeno 
+#desviacion estandar con la funcion desempeno
 pRet, pStd = desempeno(peso, media_rendimiento, covmatrix, time)
 
 #Establecemos el valor monetario de nuestro portafolio 
-inversion_inicial = 10000
+inversion_inicial = 100000
 
 #Imprimimos los resultados del Rendimiento total y los calculos de los VaR 
 #historicos 
@@ -96,45 +98,72 @@ print('Rendimiento esparado del portafolio:      ',
       round(inversion_inicial*pRet,2))
 print('Value at Risk 95th CI    :      ', round(inversion_inicial*hVaR,2))
 print('Conditional VaR 95th CI  :      ', round(inversion_inicial*hCVaR,2))        
-        
 
-# VaR por el metodo Monte Carlo 
-mc_sims = 400 # numero de simulaciones
-T = 100 #p eriodo de tiempo en dias 
+from itertools import product
 
+# Configuración de la simulación
+num_activos = len(tickers)  # Número de activos en el portafolio
+resolucion = 0.05  # Resolución de los pesos (cuanto más pequeña, más combinaciones)
+mc_sims = 400  # Número de simulaciones
+T = 100  # Periodo de tiempo en días
+initialPortfolio = 100000  # Valor monetario inicial del portafolio
 
-meanM = np.full(shape=(T, len(peso)), fill_value=media_rendimiento)
-meanM = meanM.T
+# Genera todas las combinaciones posibles de pesos que suman a 1
+rango_pesos = np.arange(0, 1 + resolucion, resolucion)
+combinaciones_pesos = [comb for comb in product(rango_pesos, repeat=num_activos) if sum(comb) == 1]
 
-portfolio_sims = np.full(shape=(T, mc_sims), fill_value=0.0)
+# Lista para almacenar los resultados del VaR y pesos correspondientes
+resultados = []
 
-initialPortfolio = 10000
+# Iteramos sobre todas las combinaciones de pesos
+total_combinaciones = len(combinaciones_pesos)
+for i, peso in enumerate(combinaciones_pesos):
+    peso = np.array(peso)
 
-for m in range(0, mc_sims):
-    # MC loops
-    #Genera una matriz de numeros aleatorios siguiendo una distribucion normal 
-    #para simular choques aletorios en los rendimientos de los activos en cada 
-    #periodo
-    Z = np.random.normal(size=(T, len(peso)))
-    #utiliza la descomposicion de cholesky sobre la matriz de covarianza 
-    #modela las correlaciones entre los activos, transforma las variables
-    #aleatorias no correlacionadas en variables correlacionadas 
-    L = np.linalg.cholesky(covmatrix)
-    #simulacion de rendimientos diarios, calcula la suma de los rendmientos 
-    #promedio mas el choque aleatorio correlacionado
-    dailyReturns = meanM + np.inner(L, Z)
-    #rendimiento acumulado del portafolio, aplica los pesos del portafolio a 
-    #los rendimientos diarios simulados y luego acumula los rendimientos 
-    #con np.cumprod
-    portfolio_sims[:,m] = np.cumprod(np.inner(peso, 
-                                    dailyReturns.T)+1)*initialPortfolio
-     
+    # print el progreso de el calculo
+    print(f"Progreso: {i + 1}/{total_combinaciones} combinaciones procesadas ({((i + 1) / total_combinaciones) * 100:.2f}%)")
+
+    
+    # Monte Carlo VaR
+    meanM = np.full(shape=(T, len(peso)), fill_value=media_rendimiento.values)
+    meanM = meanM.T
+    portfolio_sims = np.full(shape=(T, mc_sims), fill_value=0.0)
+
+    for m in range(0, mc_sims):
+        # MC loops
+        #Genera una matriz de numeros aleatorios siguiendo una distribucion normal 
+        #para simular choques aletorios en los rendimientos de los activos en cada 
+        #periodo
+        Z = np.random.normal(size=(T, len(peso)))
+        #utiliza la descomposicion de cholesky sobre la matriz de covarianza 
+        #modela las correlaciones entre los activos, transforma las variables
+        #aleatorias no correlacionadas en variables correlacionadas 
+        L = np.linalg.cholesky(covmatrix)
+        #simulacion de rendimientos diarios, calcula la suma de los rendmientos 
+#promedio mas el choque aleatorio correlacionado
+        dailyReturns = meanM + np.inner(L, Z)
+        #rendimiento acumulado del portafolio, aplica los pesos del portafolio a 
+        #los rendimientos diarios simulados y luego acumula los rendimientos 
+        #con np.cumprod
+        portfolio_sims[:, m] = np.cumprod(np.inner(peso, dailyReturns.T) + 1) * initialPortfolio
+
+    # Calcula el VaR para esta combinación de pesos
+    portafolio_final = portfolio_sims[-1, :]
+    VaR = np.percentile(portafolio_final, 5)
+
+    # Guarda los pesos y el VaR en la lista de resultados
+    resultados.append(list(peso) + [VaR])
+
+# Convierte los resultados en un DataFrame
+columnas = [f'Peso Activo {i+1}' for i in range(num_activos)] + ['VaR']
+df_resultados = pd.DataFrame(resultados, columns=columnas)     
+
 #graficamos las simulaciones 
-plt.plot(portfolio_sims)
-plt.ylabel('Portfolio Value ($)')
-plt.xlabel('Days')
-plt.title('MC simulation of a stock portfolio')
-plt.show()
+#plt.plot(portfolio_sims)
+#plt.ylabel('Portfolio Value ($)')
+#plt.xlabel('Days')
+#plt.title('MC simulation of a stock portfolio')
+#plt.show()
 
 #Mcvar calcula el valor en riesgo historico para los datos optenidos en la
 #simulacion montecarlo 

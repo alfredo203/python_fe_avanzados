@@ -12,9 +12,14 @@ import numpy as np #operaciones matematicas y generacion de num aleatorios
 import matplotlib.pyplot as plt #creacion de graficos 
 import pygsheets
 
-gc = pygsheets.authorize(service_file=r"C:/Users/david/Documents/Clase_Prob/Code/credenciales.json")
+#autorizamos el acceso con nuestra clave .json
+gc = pygsheets.authorize(service_file=r"C:/Users/Admin/Documents/sturdy-shelter-436019-d6-4bc6576810f9.json")
+
+#especificamos el archivo que queremos abrir 
 sh = gc.open("BaseActinver")
+#especificamos hoja que queremos abrir 
 wks = sh.sheet1
+#descargamos la base de datos, eliminamos los nulos y establecemos la fecha como index 
 df_act = wks.get_as_df()
 df_act = df_act.dropna()
 df_act.set_index("Date", inplace=True) 
@@ -161,5 +166,17 @@ VaR = initialPortfolio - mcVaR(portResults, alpha=5)
 CVaR = initialPortfolio - mcCVaR(portResults, alpha=5)
 
 #imprimimos y presentanmos los resultados 
-print('VaR ${}'.format(round(VaR,2)))
-print('CVaR ${}'.format(round(CVaR,2)))
+print("\nVaR:")
+
+print(' historical VaR 95th CI   :    ', round(inversion_inicial*hVaR, 2))
+print(" MC VaR  95th CI          :    ", round(VaR, 2))
+
+print("\nCVaR:")
+
+print(' historical CVaR 95th CI  :    ', round(inversion_inicial*hCVaR, 2))
+print(" MC CVaR 95th CI          :    ", round(CVaR, 2))
+
+print("\Portfolio")
+
+print('initial portfolio         :    ', round(initialPortfolio))
+print('portfolio performance     :    ', round(pRet*inversion_inicial))

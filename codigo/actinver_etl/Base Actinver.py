@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import yfinance as yf
 import pygsheets 
 import pandas as pd
+import numpy as np
 
 # Descargar información histórica
 tickers = ["AA","AAL","AAPL","AMM.TO","ABBV","ABNB","ACTINVRB.MX","AC","AFRM",
@@ -50,6 +51,7 @@ df_aj = df[datos_req] #Crea un df con los datos que quieren
 df_aj.columns = df_aj.columns.droplevel(0) #elimina la fila Close
 
 
+
 # Revisar si hay valores NaN 
 print (f"cuantos nan hay en cada columna{df_aj.isna().sum()}")# Ver cuántos 
 # valores NaN hay en cada columna
@@ -64,15 +66,15 @@ print(f"Cuantos nan hay en cada columna de df_fin {df_act.isna().sum()}")
 
 #Genera una gráfica para cada una de las acciones
 #Como esta identado hará una gráfica para cada ticker
-for ticker in tickers: #Va a usar todos los tickers dentro de la lista tickers
-    plt.figure(figsize=(10,6)) #asi crea una grafica para cada accion
-    df_act[ticker].plot(label=ticker,color="purple")#Pueden cambiar c
-    plt.title(f"Precio de cierre {ticker}") #titulo 
-    plt.xlabel("Fecha") #eje x
-    plt.ylabel("Precio de cierre") #eje y
-    plt.legend() #muestra la leyenda
-    plt.grid(True) # hace una cuadricula
-    plt.show() #muestra el gráfico
+#for ticker in tickers: #Va a usar todos los tickers dentro de la lista tickers
+    #plt.figure(figsize=(10,6)) #asi crea una grafica para cada accion
+    #df_act[ticker].plot(label=ticker,color="purple")#Pueden cambiar c
+    #plt.title(f"Precio de cierre {ticker}") #titulo 
+    #plt.xlabel("Fecha") #eje x
+    #plt.ylabel("Precio de cierre") #eje y
+    #plt.legend() #muestra la leyenda
+    #plt.grid(True) # hace una cuadricula
+    #plt.show() #muestra el gráfico
 
 #Pasar el dataframe a google sheets
 # Autenticar usando el archivo de credenciales descargado de Google Cloud

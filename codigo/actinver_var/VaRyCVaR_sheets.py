@@ -10,28 +10,17 @@ Calculos de Valores VaR por el metodo historico y por simulacion Monte Carlo
 import pandas as pd #manejo de dataframes
 import numpy as np #operaciones matematicas y generacion de num aleatorios
 import matplotlib.pyplot as plt #creacion de graficos 
-import pygsheets
-
-#autorizamos el acceso con nuestra clave .json
-gc = pygsheets.authorize(service_file=r"C:/Users/Admin/Documents/sturdy-shelter-436019-d6-4bc6576810f9.json")
-
-#especificamos el archivo que queremos abrir 
-sh = gc.open("BaseActinver")
-#especificamos hoja que queremos abrir 
-wks = sh.sheet1
-#descargamos la base de datos, eliminamos los nulos y establecemos la fecha como index 
-df_act = wks.get_as_df()
-df_act = df_act.dropna()
-df_act.set_index("Date", inplace=True) 
-df_act = df_act.sort_index()
+import yfinance as yf #obtencion de datos financieros 
+import datetime as dt #trabajar con fechas
 
 
 #getdata exatre los valores de cierre de las emisoras espificadas en tickers
 #devuelve el cambio porcentual de la serie (rendimiento), la media del 
 #cambio y la matriz de covarianza de las emisoras 
-def getdata(stocks): 
-    df = df_act[stocks]
-    rendimiento = df.pct_change() 
+def getdata(stocks, start, end): 
+    stockdata =yf.download(stocks, start=start, end=end) 
+    stockdata = stockdata['Close'] 
+    rendimiento = stockdata.pct_change() 
     media_rendimiento = rendimiento.mean()
     covmatrix = rendimiento.cov()
     return rendimiento, media_rendimiento, covmatrix 
@@ -46,8 +35,12 @@ def desempeno(peso, media_rendimiento, covmatrix, time):
 #Establecemos los parametros para operar nuestras funciones
 tickers = ["GOOG","BKNG","META", "AAPL","TSLA","^IRX"] #creamos un portafolio
 
+end_date = dt.datetime.now()
+start_date = end_date - dt.timedelta(days=800)
+
 #Utiizamos la funcion getdata para obtener nuestras tres primeras variables
-rendimiento, media_rendimiento, covmatrix = getdata(tickers)
+rendimiento, media_rendimiento, covmatrix = getdata(tickers, start=start_date, 
+                                                    end=end_date)
 rendimiento = rendimiento.dropna() #eliminamos los valores nulos 
 
 #Establecemos el peso correspondiente a cada accion en el portafolio 
@@ -107,41 +100,39 @@ print('Conditional VaR 95th CI  :      ', round(inversion_inicial*hCVaR,2))
 # VaR por el metodo Monte Carlo 
 mc_sims = 400 # numero de simulaciones
 T = 100 #p eriodo de tiempo en dias 
-
-
-meanM = np.full(shape=(T, len(peso)), fill_value=media_rendimiento)
-meanM = meanM.T
-
-portfolio_sims = np.full(shape=(T, mc_sims), fill_value=0.0)
-
 initialPortfolio = 10000
 
-for m in range(0, mc_sims):
-    # MC loops
-    #Genera una matriz de numeros aleatorios siguiendo una distribucion normal 
-    #para simular choques aletorios en los rendimientos de los activos en cada 
-    #periodo
-    Z = np.random.normal(size=(T, len(peso)))
-    #utiliza la descomposicion de cholesky sobre la matriz de covarianza 
-    #modela las correlaciones entre los activos, transforma las variables
-    #aleatorias no correlacionadas en variables correlacionadas 
-    L = np.linalg.cholesky(covmatrix)
-    #simulacion de rendimientos diarios, calcula la suma de los rendmientos 
-    #promedio mas el choque aleatorio correlacionado
-    dailyReturns = meanM + np.inner(L, Z)
-    #rendimiento acumulado del portafolio, aplica los pesos del portafolio a 
-    #los rendimientos diarios simulados y luego acumula los rendimientos 
-    #con np.cumprod
-    portfolio_sims[:,m] = np.cumprod(np.inner(peso, 
-                                    dailyReturns.T)+1)*initialPortfolio
-     
-#graficamos las simulaciones 
+def MonteCarlo(mc_sims, T, media_rendimiento, peso, initialPortfolio, covmatrix):
+    # Verificar que media_rendimiento sea un vector
+    meanM = np.tile(media_rendimiento, (T, 1))  # T filas y una copia de media_rendimiento en cada fila
+    portfolio_sims = np.zeros((T, mc_sims))  # Inicializa la matriz para guardar simulaciones
+
+    for m in range(mc_sims):
+        # Generar rendimientos diarios simulados
+        Z = np.random.normal(size=(T, len(peso)))
+        L = np.linalg.cholesky(covmatrix)
+        dailyReturns = meanM + Z @ L.T  # Multiplicación de matrices para simular rendimientos correlacionados
+
+        # Cálculo de la evolución del portafolio
+        portfolio_returns = np.cumprod(1 + np.dot(dailyReturns, peso))  # Acumular rendimientos diarios
+        portfolio_sims[:, m] = portfolio_returns * initialPortfolio  # Aplicar valor inicial del portafolio
+        
+        plt.plot(portfolio_sims)
+        plt.ylabel('Portfolio Value ($)')
+        plt.xlabel('Days')
+        plt.title('MC simulation of a stock portfolio')
+        plt.show()
+
+    return portfolio_sims
+    
+
+portfolio_sims = MonteCarlo(mc_sims, T, media_rendimiento, peso, initialPortfolio, covmatrix)
+
 plt.plot(portfolio_sims)
 plt.ylabel('Portfolio Value ($)')
 plt.xlabel('Days')
 plt.title('MC simulation of a stock portfolio')
 plt.show()
-
 #Mcvar calcula el valor en riesgo historico para los datos optenidos en la
 #simulacion montecarlo 
 def mcVaR(rendimiento, alpha=5):

@@ -78,16 +78,14 @@ print(f"Cuantos nan hay en cada columna de df_fin {df_act.isna().sum()}")
 
 #Pasar el dataframe a google sheets
 # Autenticar usando el archivo de credenciales descargado de Google Cloud
-gc = pygsheets.authorize(service_file="C:/Users/edson/OneDrive/Documents/EqupoPython/credenciales.json")
+#gc = pygsheets.authorize(service_file="C:/Users/edson/OneDrive/Documents/EqupoPython/credenciales.json")
 
 #Abrir el google spreadsheet (dónde "BaseActinver es el nombre de mi hoja)
-sh = gc.open("BaseActinver")
+#sh = gc.open("BaseActinver")
 
 #Seleccionar la primera hoja
-wks = sh[0]
+#wks = sh[0]
 
 #Actualizar la primera hoja con el df_act
-wks.set_dataframe(df_aj,(1,1),copy_index=True)
-
-
+#wks.set_dataframe(df_aj,(1,1),copy_index=True)
 

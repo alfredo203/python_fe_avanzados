@@ -15,10 +15,13 @@ Created on Tue Oct  8 13:55:55 2024
 #en formato %Y-%m-%d
 def actbase (tickers, inicio, final):
     import yfinance as yf
+    import pandas as pd
     df = yf.download(tickers, start=inicio, end=final) #Esta es la base completa
     datos_req = ["Close"] #Aqui pueden poner los datos que quieran usar
     df_aj = df[datos_req] #Crea un df con los datos que quieren
-    df_aj.columns = df_aj.columns.droplevel(0) #elimina la fila Close
+    if isinstance(df_aj.columns, pd.MultiIndex):
+        df_aj.columns = df_aj.columns.droplevel(0)  # Elimina el primer nivel si es multiíndice
+    
     return df_aj
 #Ejemplo:
 # tickers =["META","NVDA"] crear una lista llamada tickers, y poner el ticker
@@ -29,4 +32,6 @@ def actbase (tickers, inicio, final):
     #%Y-%m-%d
 # dataframe = actbase(tickers, inicio, final) #Creamos una variable que llame
 # a la función, y nos generará un dataframe en la variable
+#otro ejemplo
+#data = actbase("NVDA", "2023-01-01", "2024-10-14")
 

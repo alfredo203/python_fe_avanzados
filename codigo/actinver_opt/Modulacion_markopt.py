@@ -6,52 +6,36 @@ Created on Thu Oct 10 13:33:45 2024
 """
 
 import numpy as np
-import pandas as pd
 import yfinance as yf
+
+
 # Lista de tickers de acciones y ETFs que se analizarán
-tickers = ["AA", "AAL", "AAPL", "AMM.TO", "ABBV", "ABNB", "ACTINVRB.MX", "AC", "AFRM",
-           "AGNC", "ALFAA.MX", "ALPEKA.MX", "ALSEA.MX", "AMAT", "AMD", "AMX", "AMZN",
-           "APA", "ASURB.MX", "ATER", "ATOS", "AIY.DE", "AVGO", "AXP", "BABA", "BAC",
-           "BA", "BBAJIOO.MX", "BIMBOA.MX", "BMY", "BNGO", "CAT", "CCL",
-           "CEMEXCPO.MX", "CHDRAUIB.MX", "CLF", "COST", "CRM", "CSCO",
-           "CUERVO.MX", "CVS", "CVX", "C", "DAL", "DIS", "DVN", "ELEKTRA.MX", "ETSY",
-           "FANG", "FCX", "FDX", "FEMSAUBD.MX", "FIBRAMQ12.MX", "FIBRAPL14.MX",
-           "FSLR", "FUBO", "FUNO11.MX", "F", "GAPB.MX", "GCARSOA1.MX", "GCC",
-           "GENTERA.MX", "GE", "GFINBURO.MX", "GFNORTEO.MX", "GILD", "GMEXICOB.MX",
-           "GME", "GM", "GOLD", "GOOGL", "GRUMAB.MX", "HD", "INTC", "JNJ", "JPM",
-           "KIMBERA.MX", "KOFUBL.MX", "KO", "LABB.MX", "LASITEB-1.MX", "LCID",
-           "LIVEPOLC-1.MX", "LLY", "LUV", "LVS", "LYFT", "MARA", "MA", "MCD", 
-           "MEGACPO.MX", "MELIN.MX", "META", "MFRISCOA-1.MX", "MGM", "MRK", 
-           "MRNA", "MRO", "MSFT", "MU", "NCLHN.MX", "NFLX", "NKE", "NKLA", 
-           "NUN.MX", "NVAX", "NVDA", "OMAB.MX", "ORBIA.MX", "ORCL", "OXY1.MX", 
-           "PARA", "PBRN.MX", "PE&OLES.MX", "PEP", "PFE", "PG", "PINFRA.MX", 
-           "PINS", "PLTR", "PYPL", "QCOM", "Q.MX", "RCL", "RIOT", "RIVN", 
-           "ROKU", "RA.MX", "SBUX", "SHOP", "SITES1A-1.MX", "SKLZ", "SOFI", 
-           "SPCE", "SQ", "TALN.MX", "TERRA13.MX", "TGT", "TLEVISACPO.MX", 
-           "TMO", "TSLA", "TSMN.MX", "TWLO", "TX", "T", "UAL", "UBER", "UNH", 
-           "UPST", "VESTA.MX", "VOLARA.MX", "VZ", "V", "WALMEX.MX", "WFC", 
-           "WMT", "WYNN", "XOM", "X", "ZM"]
+tickers = ["AA", "AAL", "MFRISCOA-1.MX", "MGM", "MRK", 
+           "MRNA", "MRO", "MSFT", "MU"]
 
 # Fechas de inicio y final para los datos a descargar
 inicio = "2022-03-01"
 final = "2024-09-17"
+
 
 # Función para descargar los datos de cierre ajustado de los tickers seleccionados
 def descargar_datos(tickers, inicio, final, datos_req=["Close"]):
     # Descarga los datos de Yahoo Finance en el rango de fechas especificado
     df = yf.download(tickers, start=inicio, end=final)
     # Devuelve solo las columnas solicitadas (por defecto, el precio de cierre ajustado)
-    return df[datos_req]
+    return df
+    # Calcula los rendimientos simples porcentuales
 
 # Función para calcular los rendimientos logarítmicos
+    # df_aj = descargar_datos(tickers, inicio, final)
 def calcular_rendimientos_log(df_aj):
-    # Calcula los rendimientos simples porcentuales
+    # Calcula los rendimientos simples porcentuales    
     rendimiento = df_aj.pct_change()
     # Convierte los rendimientos simples en rendimientos logarítmicos
     log_returns = np.log(1 + rendimiento)
     # Retorna los rendimientos logarítmicos
     return log_returns
-
+    
 # Función para simular múltiples portafolios
 def simular_portafolios(log_returns, num_portafolios=5000):
     # Obtiene el número de activos en el portafolio
@@ -119,3 +103,28 @@ def ejecutar_analisis(tickers, inicio, final):
 
 # Ejecuta el análisis de portafolios con los tickers y fechas indicados
 ejecutar_analisis(tickers, inicio, final)
+
+
+# EJEMPLO DE USO
+
+# Lista de los tickers
+tickers = ["AAPL", "MSFT", "AMZN"]  
+# Fecha de inicio del análisis
+inicio = "2020-01-01"  
+# Fecha final del análisis
+final = "2021-01-01"   
+
+df_aj = descargar_datos(tickers, inicio, final)
+
+# Ejemplo de uso de la función calcular_rendimientos_log
+log_returns = calcular_rendimientos_log(df_aj)
+
+# Ejemplo de uso de la función simular_portafolios
+num_portafolios = 5000  
+weight, ReturnEsp, VolEsp, RadioSharpe = simular_portafolios(log_returns, num_portafolios)
+
+# Ejemplo de uso de la función encontrar_mejor_portafolio
+best_weights, retorno, volatilidad, sharpe_ratio = encontrar_mejor_portafolio(weight, ReturnEsp, VolEsp, RadioSharpe)
+
+# Ejemplo de uso de la función mostrar_resultados
+mostrar_resultados(tickers, best_weights, retorno, volatilidad, sharpe_ratio)
